@@ -1,0 +1,48 @@
+pipeline { 
+ 
+  environment { 
+      registry = "eatherv/keanu" 
+      registryCredential = 'chris' 
+      dockerImage = ''
+      BUILD = '1'
+  }
+ 
+agent any 
+  stages { 
+      stage('Cloning our Git') { 
+          steps { 
+             git(
+                    url: "https://github.com/atharrvv/jenkins.git",
+                    branch: "main",
+                    changelog: true,
+                    poll: true,
+                    credentialsId: 'name'
+                )
+          }
+      } 
+ 
+      stage('Building our image') { 
+          steps { 
+              script { 
+                  dockerImage = docker.build registry + ":$BUILD_NUMBER"
+              }
+          } 
+      }
+ 
+      stage('Deploy our image') { 
+          steps { 
+              script { 
+                  docker.withRegistry( '', registryCredential ) { 
+                      dockerImage.push() 
+                  }
+              } 
+          }
+      } 
+ 
+      stage('Cleaning up') { 
+          steps { 
+              sh "docker rmi $registry:$BUILD_NUMBER" 
+          }
+      } 
+  }
+}
